@@ -171,7 +171,7 @@ for(const [name,openers] of Object.entries(expandedGreetingThemes)){
 }
 const greetingSeenKey='glam-greeting-seen-v2';let greetingSeen=[];
 try{const stored=JSON.parse(localStorage.getItem(greetingSeenKey)||'[]');if(Array.isArray(stored))greetingSeen=stored}catch(e){}
-function nextFreshGreeting(collection){let pool=collection==='Unfiltered Sass'?explicitGreetings:collection==='Original presets'?presets.map(p=>p.slice(1,4)):greetingLibrary[collection]||[];
+function nextFreshGreeting(collection){let pool=collection==='Unfiltered Sass'?explicitGreetings:collection==='Original presets'?[...presets.map(p=>p.slice(1,4)),...Object.values(greetingLibrary).flat()]:greetingLibrary[collection]||[];
  const key=x=>x.join('\\u241f');let available=pool.filter(x=>!greetingSeen.includes(key(x)));
  if(!available.length){available=pool.slice();if(!available.length)return null;greetingSeen=greetingSeen.filter(k=>!pool.some(x=>key(x)===k));}
  const chosen=available[Math.floor(Math.random()*available.length)];greetingSeen.push(key(chosen));
@@ -418,7 +418,7 @@ function applyPreset(i){const p=presets[i];if(!p)return;['line1','line2','line3'
 function randomize(preserveText=false){
  const step=typeof builderStep==='number'?builderStep:0;
  if(step===0){const greeting=nextFreshGreeting(get('attitude'));if(greeting)greeting.forEach((v,j)=>set('line'+(j+1),v));}
- else {const group=step===1?'visual':step===2?'characters':step===3?'type':step===4?'animation':'extra';
+ else {const group=step===1?'visual':step===2?'characters':step===3?'type':step===4?'motion':null;
  for(const [id,,opts] of (config[group]||[])){
  if(locked.has(id)||!opts.length)continue;
  const previous=Number(get(id));let eligible=opts.map((_,i)=>i).filter(i=>i!==previous);
