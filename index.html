@@ -430,88 +430,36 @@ const typography=vault?`TYPOGRAPHY — ${vault.name}: ${vault.description} ${let
 
 const motion=`ANIMATION: ${choice('movement')}. Secondary accents: ${compatible.resolvedAccent}. Lettering behavior: ${vault?.mode==='flat'?'Keep the flat printed lettering stationary, with no bevel glints or morphing':compatible.resolvedLetterMotion}. Pacing: ${choice('speed')}. Duration: ${choice('duration')}, ${choice('fps')}. ${get('loop')?'Create a seamless, cyclical loop whose last frame flows naturally into the first, with continuous repeating motion and no hard cuts.':'No loop required; use a gentle complete animation.'} ${get('stillText')?'Keep all headline text perfectly stationary, unchanged, and fully legible in every frame. No letter morphing, bouncing, flickering, or spelling changes.':'Allow only the specified subtle typography animation, never distort the letterforms or wording.'} ${get('noCamera')?'Lock the camera: no zoom, pans, tilts, reframing, cropping or perspective changes.':'Use only very restrained camera movement while keeping every letter visible.'} Animate the actual environment using natural layered movement, depth, lighting and reflections, not merely a static picture with a filter. Keep scene objects in their original positions. ${exMotion?'Extra requested motion: '+exMotion+'.':''}`;
 const negative=`AVOID: Misspelled or altered words, extra captions, incorrect line breaks, unreadable or cropped text, malformed letters, random watermarks, copied third-party logos, UI elements, QR codes, fake branding, visual clutter, low resolution, distorted scenery, random people, harsh flicker, glitch artifacts, unwanted object motion, abrupt cuts, changing object identities, melting letters, and jitter. ${avoid?'Additional exclusions: '+avoid+'.':''}`;
-const architectImageRole='Act as a high-end creative director and expert visual prompt designer, specializing in luxury greeting artwork, editorial typography, cinematic composition, and image-generation art direction.';
-const architectMotionRole='Act as an expert motion art director and image-to-video animation designer, specializing in clean, seamless, premium greeting-card animations.';
-const consistencyRules='Apply every selected option as part of one cohesive visual concept. Do not introduce unrelated objects, alter the headline, override chosen ages or body proportions, or substitute a different aesthetic. Give priority to explicit custom instructions and compatibility-safe output over decorative filler.';
-const qualityGate='Before producing the final result, silently check that all words and line breaks match exactly, the scene and character details are compatible, the palette and selected typography are consistent, the aspect ratio is correct, no prohibited decoration appears, and the result is one polished composition. Correct conflicts in execution without altering the selections stored in the generator. Output the finished artwork only.';
-results.image=`PROMPT NAME: Premium Greeting Card · ${textLines()[0]||'Custom Greeting'}
+const cleanSentence=v=>String(v||'').trim().replace(/[.\\s]+$/,'');
+const cleanMotion=compatible.resolvedAccent==='No extra floating accents'?'without additional floating accents':compatible.resolvedAccent.toLowerCase();
+const characterBrief=Number(get('cast'))===0?'Include no people':`Include ${choice('cast').toLowerCase()} in ${choice('render').toLowerCase()}, age ${choice('age')}, with ${choice('body').toLowerCase()} proportions and ${choice('skin').toLowerCase()} skin. Dress them in ${choice('wardrobe').toLowerCase()} and show them ${choice('pose').toLowerCase()}. ${characterStyleDescription()} ${get('characterNotes').trim()} Preserve all chosen identity details and anatomy; never slim the figure`;
+const flowersBrief=/^no flowers$/i.test(choice('flowers'))?'no flowers':cleanSentence(choice('flowers')).toLowerCase();
+const propsBrief=/^scenery only, no foreground props$/i.test(choice('props'))?'no foreground props':cleanSentence(choice('props')).toLowerCase();
+const typeBrief=vault?`${vault.name} lettering with ${vault.description}`:`${choice('letterStyle')} with ${letteringColor}, ${choice('outline')} and ${choice('detail')}`;
+const exactText=textLines().map(x=>'"'+x+'"').join(' / ');
+const outputRestrictions='Do not add extra text, logos, watermarks, unselected props, or unrelated decorations. Keep every word spelled correctly, fully visible and easy to read.';
+results.image=`Act as an expert cinematic greeting-card artist and typography designer. Create ONE premium, high-resolution ${choice('ratio')} greeting image with the exact text ${exactText}. Keep those three lines in that order with their exact spelling, punctuation and capitalization; do not add any other writing${sign?', except the small signature "'+sign+'"':''}.
 
-ROLE
-${architectImageRole}
+Set the design in ${cleanSentence(choice('scene')).toLowerCase()}, with ${cleanSentence(choice('time')).toLowerCase()} lighting, ${cleanSentence(choice('atmosphere')).toLowerCase()} atmosphere, ${flowersBrief}, and ${propsBrief}. Use a ${cleanSentence(choice('style')).toLowerCase()} aesthetic, ${cleanSentence(choice('exaggeration')).toLowerCase()} scale, and ${colorDirection}. ${exScene?'Include '+exScene+'. ':''}${characterBrief}.
 
-OBJECTIVE
-Create one original, commercially polished ${choice('ratio')} greeting-card image that can serve as the exact first frame of an animated greeting. The lettering must be the visual hero.
+Make the wording the hero: ${typeBrief}. Place it using ${choice('placement').toLowerCase()}, with balanced spacing, vivid contrast and crisp readable letterforms. Compose one cohesive finished scene with convincing depth, professional lighting, clean material detail and sharp visual quality. Keep all text inside the canvas and clear of faces.
 
-CONTEXT
-This design uses the following exact greeting, art direction, and character selections. Make them work together as a deliberate premium composition.
+${outputRestrictions} Generate the final image, not a written explanation.`;
+results.animation=`Act as an expert cinematic motion designer. Animate the uploaded greeting image into a polished ${choice('duration')} ${choice('ratio')} video at ${choice('fps')}. Treat the uploaded image as the exact first frame and keep the composition, subjects, colors, textures and lettering unchanged.
 
-${base}
+Animate ${cleanSentence(choice('movement')).toLowerCase()}, with ${cleanMotion} and ${cleanSentence(choice('speed')).toLowerCase()} pacing. ${get('stillText')?'Keep every letter completely stationary with no moving highlights.':compatible.resolvedLetterMotion+'.'} ${get('noCamera')?'Keep the camera completely locked.':'Use only subtle camera movement without cropping the text.'} ${get('loop')?'Make the motion loop smoothly with no hard cut.':'Give the movement a natural finish.'} ${exMotion?'Also apply '+exMotion+'. ':''}
 
-${scene}
+Preserve this exact text in the original layout: ${exactText}. Do not redraw the scene, introduce new objects, change the characters or alter the words. Deliver the finished animation only.`;
+results.negative=`Avoid misspelled, cropped or extra text; warped letters; distorted faces, hands or body proportions; visual clutter; unintended objects or characters; watermarks; logos; flicker, jitter, camera shake or abrupt cuts. ${avoid}`;
+results.master=`Act as a premium greeting-card creative director and cinematic motion designer. First create the finished still image following this brief:
 
-DELIVERY REQUIREMENTS
-${typography}
-
-Stage foreground, midground and background so the scene has believable visual depth while the complete headline stays highly legible. Use intentional lighting, sophisticated color balance, accurate material rendering, smooth contours, sharp resolution and clean composition. When people are present, respect their age, skin tone, body proportions, facial identity, hair, clothing, and accessories with anatomically correct hands and natural facial detail. Render in the selected ${choice('ratio')} format only.
-${consistencyRules}
-
-OUTPUT STRUCTURE
-Produce exactly one complete high-resolution image, not a collage, mockup, instruction sheet, list, explanation, or multiple variations.
-
-AVOID / RESTRICTIONS
-${negative}
-
-FINAL QUALITY CHECK
-${qualityGate}`;
-results.animation=`PROMPT NAME: Animated Greeting · ${textLines()[0]||'Custom Greeting'}
-
-ROLE
-${architectMotionRole}
-
-OBJECTIVE
-Create one beautiful, controlled ${choice('duration')} animated video at ${choice('fps')} using the supplied greeting image as the exact first frame and fixed scene reference.
-
-CONTEXT
-Keep the original image’s scenery, visual treatment, faces, anatomy, typography, layout, lighting, and objects unchanged. The selected output shape is ${choice('ratio')}.
-
-EXACT TEXT TO PRESERVE
-${words||'(No headline entered)'}
-
-DELIVERY REQUIREMENTS
-${motion}
-${consistencyRules}
-Do not redraw, rewrite, add props, add people, or change the lettering. Keep every word in place and perfectly readable.
-
-OUTPUT STRUCTURE
-Deliver one ${choice('duration')} video at ${choice('fps')} in ${choice('ratio')}, with smooth natural movement and no interface elements. ${workflow}
-
-AVOID / RESTRICTIONS
-${negative}
-
-FINAL QUALITY CHECK
-Silently confirm the reference composition, exact words, placement, motion limits, and selected duration all agree. Present only the finished animation.`;
-results.negative=negative;
-results.master=`PROMPT NAME: Complete Animated Greeting Production · ${textLines()[0]||'Custom Greeting'}
-
-ROLE
-Act as a high-end creative director, expert visual prompt designer and motion art director overseeing one cohesive greeting-card production.
-
-OBJECTIVE
-Produce an original finished greeting image and its faithful animated counterpart.
-
-CONTEXT AND DELIVERY REQUIREMENTS
-PHASE 1: HERO IMAGE
 ${results.image}
 
-PHASE 2: ANIMATION
-After the still image is approved, animate that exact frame using the requirements below.
+Then animate that exact approved image following this brief:
+
 ${results.animation}
 
-OUTPUT STRUCTURE
-Provide one finished ${choice('ratio')} greeting image and one matching ${choice('duration')} animation, with no alternative designs or unrelated additions.
-
-FINAL QUALITY CHECK
-Silently verify identical text, design identity and formatting between both deliverables. Respect every explicitly selected option and apply the compatibility-safe instructions.`;
+Keep the typography, visual identity and composition identical between the still and the video. Deliver the image and matching animation, not an explanation.`;
 }
 function show(){ $('output').value=results[active]||'';document.querySelectorAll('[data-tab]').forEach(b=>{const yes=b.dataset.tab===active;b.classList.toggle('active',yes);b.setAttribute('aria-selected',String(yes))}) }
 function preview(){['line1','line2','line3'].forEach((id,i)=>$('pv'+(i+1)).textContent=get(id)||' ');const sample=document.querySelector('.sample');sample.style.aspectRatio=['1 / 1','9 / 16','4 / 5','16 / 9'][Number(get('ratio'))]||'1 / 1';sample.style.maxHeight='none'}
