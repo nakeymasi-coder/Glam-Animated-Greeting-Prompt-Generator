@@ -84,6 +84,7 @@ body.route-home .wrap{max-width:1200px;padding:32px 32px 105px}body.route-home .
 .char-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #c0d0e4;background:white;border-radius:25px;font-size:12px;cursor:pointer}
 .char-chip:has(input:checked){background:#dbecff;border-color:#2064b8;color:#103b63}
 .char-chip input{accent-color:#155fdd}
+.char-custom-row{display:flex;gap:8px;align-items:center;padding:0 12px 13px;flex-wrap:wrap}.char-custom-row input{flex:1;min-width:120px;background:white;border:1px solid #adc4e1;border-radius:9px;padding:10px;min-height:43px}.char-custom-row button{border:1px solid #b3cbe5;border-radius:9px;background:#e7f2ff;color:#103b63;padding:10px 13px;min-height:43px;font-weight:700}
 .character-tools{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .character-tools button{border:1px solid #b3cbe5;border-radius:9px;background:white;padding:9px 13px;min-height:42px}
 .character-tools p{font-size:12px;color:#526b84;margin:0}
@@ -429,6 +430,13 @@ const characterStyleChoices={
 'Expression & attitude':['Warm smile','Laughing','Confident smirk','Serious editorial gaze','Playful side-eye','Raised eyebrow','Flirty smile','Relaxed and content','Joyful expression','Bold attitude','Calm and powerful'],
 'Framing':['Full body including shoes','Three-quarter body','Waist-up portrait','Head and shoulders','Close-up beauty portrait','Wide environmental character shot']
 };
+const customCharacterStorageKey='glam-greeting-character-custom-v1';
+let savedCharacterOptions={};
+try{savedCharacterOptions=JSON.parse(localStorage.getItem(customCharacterStorageKey)||'{}')||{}}catch(e){savedCharacterOptions={}}
+for(const [category,values] of Object.entries(savedCharacterOptions)){
+if(!Array.isArray(characterStyleChoices[category])||!Array.isArray(values))continue;
+for(const value of values){if(typeof value==='string'&&value.trim()&&!characterStyleChoices[category].some(v=>v.toLowerCase()===value.trim().toLowerCase()))characterStyleChoices[category].push(value.trim())}
+}
 const singleCharacterCategories=new Set(['Hair texture','Hairstyle','Hair color','Makeup','Shoes','Nails','Framing']);
 function characterStyleDescription(){try{const v=JSON.parse(get('characterExtras')||'{}');return Object.entries(v).filter(([k,a])=>Array.isArray(a)&&a.length).map(([k,a])=>k+': '+a.join(', ')+'.').join(' ')+' Maintain outfit, footwear, hairstyle and styling continuity across the image and animation; do not add unspecified accessories. Use only compatible selections; where multiple clothing details are selected, combine them into one cohesive outfit.'}catch(e){return ''}}
 (function initCharacterStudio(){
@@ -438,7 +446,18 @@ const section=document.createElement('details');section.className='char-style-gr
 const summary=document.createElement('summary');summary.textContent=category+' · '+(singleCharacterCategories.has(category)?'choose one':'multi-select');
 const choices=document.createElement('div');choices.className='char-options';
 options.forEach(value=>{const label=document.createElement('label');label.className='char-chip';const input=document.createElement('input');input.type='checkbox';input.dataset.category=category;input.value=value;input.checked=Array.isArray(current[category])&&current[category].includes(value);label.append(input,document.createTextNode(value));choices.append(label)});
-section.append(summary,choices);root.append(section);
+const customRow=document.createElement('form');customRow.className='char-custom-row';customRow.setAttribute('aria-label','Add custom '+category);
+const customInput=document.createElement('input');customInput.type='text';customInput.placeholder='Type your custom '+category.toLowerCase()+'…';customInput.setAttribute('aria-label','Custom '+category);customInput.maxLength=160;customInput.autocomplete='off';
+const addButton=document.createElement('button');addButton.type='submit';addButton.textContent='Add +';
+customRow.append(customInput,addButton);
+customRow.addEventListener('submit',event=>{event.preventDefault();const value=customInput.value.trim().replace(/\\s+/g,' ');if(!value)return;
+const existing=[...choices.querySelectorAll('input')].find(el=>el.value.toLowerCase()===value.toLowerCase());
+if(existing){existing.checked=true;existing.dispatchEvent(new Event('change',{bubbles:true}));customInput.value='';return}
+const label=document.createElement('label');label.className='char-chip';const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.dataset.category=category;checkbox.value=value;checkbox.checked=true;label.append(checkbox,document.createTextNode(value));choices.append(label);
+const saved=Array.isArray(savedCharacterOptions[category])?savedCharacterOptions[category]:[];saved.push(value);savedCharacterOptions[category]=saved;
+try{localStorage.setItem(customCharacterStorageKey,JSON.stringify(savedCharacterOptions))}catch(e){}
+customInput.value='';checkbox.dispatchEvent(new Event('change',{bubbles:true}));status('Custom '+category.toLowerCase()+' added and saved for future use.');});
+section.append(summary,choices,customRow);root.append(section);
 }
 const tools=document.createElement('div');tools.className='character-tools';const clear=document.createElement('button');clear.type='button';clear.textContent='Clear character styling';clear.addEventListener('click',()=>{root.querySelectorAll('input:checked').forEach(el=>el.checked=false);updateCharacterExtras()});const info=document.createElement('p');info.textContent='Choose one hairstyle, hair texture, color, shoe style, and framing. Combine compatible clothes and accessories. All styling is optional.';tools.append(clear,info);root.append(tools);
 function updateCharacterExtras(){const data={};root.querySelectorAll('input:checked').forEach(el=>(data[el.dataset.category]??=[]).push(el.value));store.value=JSON.stringify(data);refresh()}
