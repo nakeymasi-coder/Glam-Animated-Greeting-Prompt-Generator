@@ -166,7 +166,7 @@ const expandedGreetingThemes={"Morning Sass":["GOOD MORNING.","RISE AND SHINE.",
 const expandedMiddles=["I BROUGHT THE GOOD ENERGY.","THE VIBE CHECK IS COMPLETE.","I AM NOT DOING BORING TODAY.","LET US KEEP THE MAGIC.","I HAVE SOME NOTES.","YOUR PRESENCE IS APPRECIATED.","I AM CHOOSING THE BETTER VERSION.","THIS DESERVES A LITTLE EXTRA.","WE ARE DOING THINGS DIFFERENTLY.","I CHECKED THE EMOTIONAL WEATHER.","THAT IS THE OFFICIAL UPDATE.","THE MESSAGE IS VERY SIMPLE."];
 const expandedFinishes=["PLEASE ACT ACCORDINGLY.","AND THAT IS MY FINAL ANSWER.","RECEIPTS ARE AVAILABLE UPON REQUEST.","NO FURTHER QUESTIONS AT THIS TIME.","YOU CAN THANK ME LATER.","LET THE RECORD SHOW I TRIED.","PUT SOME RESPECT ON THE MOMENT.","YOUR COOPERATION IS APPRECIATED.","THE GROUP CHAT HAS BEEN NOTIFIED.","TAKE WHAT YOU NEED AND SHINE.","THE REST IS BETWEEN YOU AND YOUR CALENDAR.","I SAID WHAT I SAID."];
 for(const [name,openers] of Object.entries(expandedGreetingThemes)){
- const rows=[];for(let i=0;i<openers.length;i++)for(let j=0;j<expandedMiddles.length;j++)rows.push([openers[i],expandedMiddles[j],expandedFinishes[(i*5+j*7)%expandedFinishes.length]]);
+ const rows=[];for(let i=0;i<openers.length;i++)for(let j=0;j<expandedMiddles.length;j++)for(let k=0;k<expandedFinishes.length;k++)rows.push([openers[i],expandedMiddles[j],expandedFinishes[(k+i*5+j*7)%expandedFinishes.length]]);
  greetingLibrary[name]=rows;
 }
 const greetingSeenKey='glam-greeting-seen-v2';let greetingSeen=[];
@@ -426,9 +426,10 @@ function randomize(preserveText=false){
  if(id==='letterStyle')eligible=eligible.filter(i=>get('letterFamily')==='All lettering'||(get('letterFamily')==='Original styles'?i<vaultStyleStart:vaultLetterStyles[i-vaultStyleStart]?.family===get('letterFamily')));
  if(!eligible.length)continue;set(id,eligible[Math.floor(Math.random()*eligible.length)]);
  }
+ if(step===5){if(!locked.has('destination')){const options=[...$('destination').options];const next=options.map((_,i)=>i).filter(i=>i!==$('destination').selectedIndex);if(next.length)set('destination',next[Math.floor(Math.random()*next.length)]);}}
  if(step===2){const panel=$('characterStylePanel');if(panel&&!panel.hidden){panel.querySelectorAll('.char-style-group').forEach(section=>{const checks=[...section.querySelectorAll('input[type=checkbox]')];if(!checks.length)return;const category=checks[0].dataset.category;checks.forEach(c=>c.checked=false);checks[Math.floor(Math.random()*checks.length)].checked=true;});const chosen={};panel.querySelectorAll('input:checked').forEach(el=>(chosen[el.dataset.category]??=[]).push(el.value));$('characterExtras').value=JSON.stringify(chosen);}}
  }
- if(!locked.has('seed'))set('seed',1+Math.floor(Math.random()*999999));$('preset').value='custom';presetIndex=-1;refresh();status('Surprise Me updated this section only. Locked fields stayed the same.');
+ if(step===5&&!locked.has('seed'))set('seed',1+Math.floor(Math.random()*999999));$('preset').value='custom';presetIndex=-1;refresh();status('Surprise Me updated this section only. Locked fields stayed the same.');
 }
 async function copy(value){try{await navigator.clipboard.writeText(value);status('Copied to clipboard.')}catch(e){const box=$('output'),original=box.value;box.value=value;box.focus();box.select();let copied=false;try{copied=document.execCommand('copy')===true}catch(e2){}if(copied){box.value=original;status('Copied to clipboard.')}else{status('Clipboard blocked. The requested text is selected below. Copy it manually; choose a prompt tab to restore the display.')}}}
 function downloadText(){const content=['image','animation','master','negative'].map(k=>results[k]).join('\n\n'+ '='.repeat(55)+'\n\n');const blob=new Blob([content],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='GLAM_Animated_Greeting_Prompts.txt';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);status('TXT download requested. Check your browser downloads.')}
